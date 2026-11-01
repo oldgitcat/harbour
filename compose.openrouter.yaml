@@ -1,0 +1,6 @@
+# Persistent OpenRouter credential, used when OPENROUTER_API_KEY is not set on
+# the host. run.sh creates this mount only when the protected host file exists.
+services:
+  harbor:
+    volumes:
+      - ${OPENROUTER_HOST_SECRET_FILE}:/run/secrets/openrouter_api_key:ro

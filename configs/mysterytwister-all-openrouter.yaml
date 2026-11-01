@@ -1,0 +1,17 @@
+jobs_dir: jobs
+n_attempts: 1
+n_concurrent_trials: 1
+
+tasks:
+  - path: mysterytwister-caesar-62
+  - path: mysterytwister-autokey
+  - path: mysterytwister-m138
+  - path: mysterytwister-knapsack
+  - path: mysterytwister-notary
+
+agents:
+  - import_path: opencode2_agent:PreinstalledOpenCode2
+    model_name: openrouter/nvidia/nemotron-3.5-super-vl:free
+
+environment:
+  type: podman

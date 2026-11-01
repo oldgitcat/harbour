@@ -1,0 +1,5 @@
+# Optional override for hosts whose broken interface prefix prevents netavark
+# from allocating a bridge network (for example an interface with a /0 prefix).
+services:
+  harbor:
+    network_mode: host

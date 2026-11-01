@@ -1,0 +1,9 @@
+# Make the existing OpenCode Console login available to the agent without
+# copying credentials into the image, repository, or collected log directory.
+services:
+  main:
+    volumes:
+      - type: bind
+        source: ${OPENCODE_HOST_CONFIG_DIR}/service.json
+        target: /root/.config/opencode/service.json
+        read_only: true

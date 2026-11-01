@@ -1,0 +1,32 @@
+schema_version = "1.4"
+
+[task]
+name = "mysterytwister/mtc3-impatient-notary"
+version = "1.0.0"
+description = "Break three RSA keys with small private exponents from MysteryTwister (MTC3) using Wiener's attack."
+authors = [{ name = "MysteryTwister / NumberSmith, Elducartor, Lars Adolph" }]
+keywords = ["cryptography", "rsa", "wiener", "mysterytwister", "mtc3"]
+
+[metadata]
+difficulty = "medium"
+category = "cryptography"
+tags = ["public-key", "rsa", "continued-fractions", "small-private-exponent"]
+source = "https://www.mysterytwister.org/challenges/level-2/impatient-notary"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[verifier.env]
+
+[solution.env]

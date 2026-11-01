@@ -1,0 +1,20 @@
+services:
+  harbor:
+    build:
+      context: .
+      dockerfile: Containerfile
+      args:
+        PYTHON_VERSION: "3.14.8"
+        HARBOR_VERSION: "0.25.0"
+        PODMAN_COMPOSE_VERSION: "1.6.0"
+    image: localhost/harbor-controller:0.25.0
+    working_dir: ${HOST_PROJECT_DIR:?Set HOST_PROJECT_DIR or use ./run.sh}
+    environment:
+      - OPENCODE_API_KEY
+      - OPENCODE_HOST_CONFIG_DIR
+      - OPENROUTER_API_KEY
+      - OPENAI_API_KEY
+      - ANTHROPIC_API_KEY
+    volumes:
+      - ${PODMAN_SOCKET:?Set PODMAN_SOCKET or use ./run.sh}:/run/podman/podman.sock
+      - ${HOST_PROJECT_DIR:?Set HOST_PROJECT_DIR or use ./run.sh}:${HOST_PROJECT_DIR:?Set HOST_PROJECT_DIR or use ./run.sh}:z

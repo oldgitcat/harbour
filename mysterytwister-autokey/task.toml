@@ -1,0 +1,32 @@
+schema_version = "1.4"
+
+[task]
+name = "mysterytwister/mtc3-autokey"
+version = "1.0.0"
+description = "Break an autokey cipher from MysteryTwister (MTC3) using a short keyword and the known word WORLD."
+authors = [{ name = "MysteryTwister / Chaoyun Li" }]
+keywords = ["cryptography", "autokey", "mysterytwister", "mtc3"]
+
+[metadata]
+difficulty = "easy"
+category = "cryptography"
+tags = ["classical-cipher", "known-word", "brute-force"]
+source = "https://www.mysterytwister.org/challenges/level-1/autokey-cipher"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[verifier.env]
+
+[solution.env]

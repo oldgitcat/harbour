@@ -1,0 +1,6 @@
+# Optional OpenCode Go credentials, activated by run.sh only for an explicit
+# opencode-go/* model and when no OPENCODE_API_KEY is already set.
+services:
+  harbor:
+    volumes:
+      - ${OPENCODE_AUTH_EXPORT}:/run/secrets/opencode-auth.json:ro

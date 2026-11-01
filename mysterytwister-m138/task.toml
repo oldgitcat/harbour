@@ -1,0 +1,32 @@
+schema_version = "1.4"
+
+[task]
+name = "mysterytwister/mtc3-m138"
+version = "1.0.0"
+description = "Recover a 25-letter M-138 strip-cipher plaintext from MysteryTwister (MTC3) by finding the unknown offset."
+authors = [{ name = "MysteryTwister / Klaus Schmeh" }]
+keywords = ["cryptography", "m138", "strip-cipher", "mysterytwister", "mtc3"]
+
+[metadata]
+difficulty = "easy"
+category = "cryptography"
+tags = ["classical-cipher", "known-key", "brute-force"]
+source = "https://www.mysterytwister.org/challenges/level-1/m-138-part-1"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 900.0
+
+[environment]
+build_timeout_sec = 600.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[verifier.env]
+
+[solution.env]

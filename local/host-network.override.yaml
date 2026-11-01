@@ -1,0 +1,11 @@
+# Nur für diesen Rechner: Workaround für kaputtes /0-Präfix auf wlp4s0.
+#
+# `ip addr show wlp4s0` zeigt 10.0.10.167/0. Damit "belegt" das Interface aus
+# Sicht von netavark den kompletten IPv4-Raum, und `podman network create`
+# scheitert mit "could not find free subnet from subnet pools".
+#
+# Dieser Overlay lässt den Task im Host-Netzwerk laufen, damit Compose kein
+# eigenes Bridge-Netz anlegen muss. Nur zum lokalen Testen gedacht.
+services:
+  main:
+    network_mode: host
