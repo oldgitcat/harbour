@@ -1,113 +1,110 @@
 # MysteryTwister × Harbor
 
-Reproduzierbarer Harbor-Benchmark für Challenges von
-[MysteryTwister](https://www.mysterytwister.org/) (MTC3, CrypTool). Harbor und
-OpenCode laufen in Containern; auf dem Host werden nur Podman und ein
-Compose-Provider benötigt.
+Reproducible Harbor benchmark for challenges from
+[MysteryTwister](https://www.mysterytwister.org/) (MTC3, CrypTool). Harbor and
+OpenCode run in containers; the host only needs Podman and a Compose provider.
 
-## Fixierte Versionen
+## Pinned versions
 
-| Komponente | Version | Ort |
+| Component | Version | Location |
 |---|---:|---|
-| Harbor | 0.25.0 | Controller-Image |
-| Python | 3.14.8 | Controller- und Task-Image |
-| OpenCode | 2.2.2 (`@opencode/cli`) | Task-Image |
-| podman-compose | 1.6.0 | Controller-Image |
-| Python-Abhängigkeiten | komplett fixiert | `requirements.lock` |
+| Harbor | 0.25.0 | Controller image |
+| Python | 3.14.8 | Controller and task image |
+| OpenCode | 2.2.2 (`@opencode/cli`) | Task image |
+| podman-compose | 1.6.0 | Controller image |
+| Python dependencies | fully pinned | `requirements.lock` |
 
-Die Versionen sind bewusst gepinnt, damit ein späterer Lauf nicht unbemerkt
-andere Software installiert. `latest` wird nicht verwendet.
+Versions are deliberately pinned so a later run does not silently install
+different software. `latest` is not used.
 
-## Architektur
+## Architecture
 
 ```text
 Host
-└── rootless Podman + API-Socket
-    ├── Controller-Container
+└── rootless Podman + API socket
+    ├── Controller container
     │   └── Harbor 0.25.0 + podman-compose
-    └── Task-Container pro Trial
+    └── Task container per trial
         ├── OpenCode 2.2.2
-        ├── Challenge-Dateien
-        └── Agent + Verifier (shared)
+        ├── Challenge files
+        └── Agent + verifier (shared)
 ```
 
-Der Controller steuert den Podman-Service des Hosts über den gemounteten
-Socket. Das Projekt wird unter demselben absoluten Pfad wie auf dem Host
-gemountet, damit die von Harbor erzeugten Bind-Mounts auch für den
-Podman-Service stimmen.
+The controller controls the host's Podman service through the mounted socket.
+The project is mounted at the same absolute path as on the host so that the
+bind mounts created by Harbor also resolve correctly for the Podman service.
 
-> Der Podman-Socket erlaubt die Steuerung der Container des angemeldeten
-> Benutzers. Der Controller-Container erhält diese Berechtigung bewusst.
+> The Podman socket allows control of the containers of the logged-in user.
+> The controller container is intentionally granted this permission.
 
-## Projektstruktur
+## Project structure
 
 ```text
 .
-├── Containerfile                  # Harbor-Controller
-├── compose.yaml                   # deklarativer Controller-Start
-├── compose.host-network.yaml      # optionaler Host-Netz-Workaround
-├── compose.opencode-go.yaml       # optionaler Go-Key für den Controller
-├── compose.openrouter.yaml        # optionaler OpenRouter-Key für den Controller
-├── requirements.lock              # fixierte Python-Abhängigkeiten
-├── run.sh                         # Build + Start, ohne Host-venv
+├── Containerfile                  # Harbor controller
+├── compose.yaml                   # declarative controller start
+├── compose.host-network.yaml      # optional host-network workaround
+├── compose.opencode-go.yaml       # optional Go key for the controller
+├── compose.openrouter.yaml        # optional OpenRouter key for the controller
+├── requirements.lock              # pinned Python dependencies
+├── run.sh                         # build + start, no host venv
 ├── configs/
-│   ├── caesar-opencode2.yaml      # freies Zen-Modell
-│   ├── caesar-opencode-go.yaml    # kostenpflichtiges Go-Modell (Opt-in)
-│   ├── caesar-openrouter.yaml     # freies Nemotron-Modell über OpenRouter
-│   ├── mysterytwister-all-*.yaml  # alle Tasks, verschiedene Modelle
+│   ├── caesar-opencode2.yaml      # free Zen model
+│   ├── caesar-opencode-go.yaml    # paid Go model (opt-in)
+│   ├── caesar-openrouter.yaml     # free Nemotron model via OpenRouter
+│   ├── mysterytwister-all-*.yaml  # all tasks, different models
 │   └── mysterytwister-all-opencode-go.yaml
 ├── local/
-│   ├── analyze_job.py             # Tool-Dauern und Token-Auswertung
-│   ├── containers.conf            # Compose-Provider im Controller
-│   ├── harbor-entrypoint.sh       # liest optionale Credentials
-│   ├── host-network.override.yaml # Workaround für Task-Container
-│   ├── opencode-auth.override.yaml # read-only Host-Login, falls vorhanden
-│   └── opencode2_agent.py         # nutzt das vorinstallierte OpenCode 2
+│   ├── analyze_job.py             # tool durations and token analysis
+│   ├── containers.conf            # Compose provider in the controller
+│   ├── harbor-entrypoint.sh       # reads optional credentials
+│   ├── host-network.override.yaml # workaround for task containers
+│   ├── opencode-auth.override.yaml # read-only host login, if present
+│   └── opencode2_agent.py         # uses the preinstalled OpenCode 2
 └── mysterytwister-caesar-62/
     ├── instruction.md
     ├── task.toml
     ├── environment/
-    │   ├── Dockerfile             # Task + OpenCode 2.2.2
-    │   ├── opencode2-wrapper.sh   # CLI-Kompatibilität + privater Server
+    │   ├── Dockerfile             # task + OpenCode 2.2.2
+    │   ├── opencode2-wrapper.sh   # CLI compatibility + private server
     │   └── ciphertext.txt
-    ├── solution/solve.sh          # Oracle-Lösung
-    └── tests/                     # Verifier
+    ├── solution/solve.sh          # oracle solution
+    └── tests/                     # verifier
 ```
 
-## Schnellstart auf einem neuen Linux-System
+## Quick start on a new Linux system
 
-Voraussetzungen: Podman und ein funktionierender Compose-Provider. Python, pip,
-Node, npm, Harbor und OpenCode müssen **nicht** auf dem Host installiert sein.
+Requirements: Podman and a working Compose provider. Python, pip, Node, npm,
+Harbor and OpenCode do **not** need to be installed on the host.
 
 ```bash
 podman --version
 podman compose version
 systemctl --user enable --now podman.socket
 
-cd /pfad/zum/projekt
+cd /path/to/project
 ./run.sh
 ```
 
-`run.sh` baut die Images, startet den Controller und führt standardmäßig
-`configs/caesar-opencode2.yaml` aus. Ergebnisse landen auf dem Host unter
-`jobs/`.
+`run.sh` builds the images, starts the controller and by default runs
+`configs/caesar-opencode2.yaml`. Results are written on the host under `jobs/`.
 
-Nur prüfen, ohne Container der Task auszuführen:
+Validate only, without running task containers:
 
 ```bash
 ./run.sh -c configs/caesar-opencode2.yaml --dry-run
 ```
 
-Oracle beziehungsweise Negativkontrolle:
+Oracle or negative control:
 
 ```bash
 ./run.sh -c configs/caesar-opencode2.yaml -a oracle
 ./run.sh -c configs/caesar-opencode2.yaml -a nop
 ```
 
-## Deklarativer Job
+## Declarative job
 
-`configs/caesar-opencode2.yaml` enthält Task, Agent, Modell und Runtime:
+`configs/caesar-opencode2.yaml` contains the task, agent, model and runtime:
 
 ```yaml
 tasks:
@@ -119,54 +116,54 @@ environment:
   type: podman
 ```
 
-Damit entspricht der Lauf dem von Harbor dokumentierten Format
-`harbor run --config <config.yaml>`. Der Custom Agent folgt ebenfalls der
-offiziellen Schnittstelle `module.path:ClassName`; er überspringt lediglich die
-Installation, weil OpenCode bereits im Task-Image liegt.
+The run therefore matches Harbor's documented format
+`harbor run --config <config.yaml>`. The custom agent also follows the official
+`module.path:ClassName` interface; it only skips installation because OpenCode
+is already in the task image.
 
-Der Job kann ohne Änderung an den Dateien mit weiteren Harbor-Optionen
-kombiniert werden, zum Beispiel:
+The job can be combined with further Harbor options without changing any files,
+for example:
 
 ```bash
 ./run.sh -c configs/caesar-opencode2.yaml -n 1 --job-name caesar-test
 ```
 
-Ein vorhandener Host-Login wird automatisch wiederverwendet:
+An existing host login is reused automatically:
 
 ```bash
 opencode auth login opencode
 ```
 
-Wenn `${XDG_CONFIG_HOME:-~/.config}/opencode/service.json` existiert, hängt
-`run.sh` diese Datei über `local/opencode-auth.override.yaml` read-only nach
-`/root/.config/opencode/service.json` im Task-Container. Der Pfad wird über
-`OPENCODE_HOST_CONFIG_DIR` parametrisiert. Credentials werden weder ins Image
-oder Repository kopiert noch unter `/logs` gespeichert.
+If `${XDG_CONFIG_HOME:-~/.config}/opencode/service.json` exists, `run.sh`
+mounts this file read-only via `local/opencode-auth.override.yaml` to
+`/root/.config/opencode/service.json` in the task container. The path is
+parameterized via `OPENCODE_HOST_CONFIG_DIR`. Credentials are neither copied
+into the image or repository nor stored under `/logs`.
 
-Das freie Zen-Modell hat ein Nutzungslimit. Falls Harbor im Agenten-Log
-`provider.free-limit` / HTTP 429 meldet, ist das Kontingent erschöpft – kein
-Fehler des Tasks oder der Container-Einrichtung. Dann auf den Reset warten, ein
-anderes Modell konfigurieren oder einen OpenCode-Go-Zugang verwenden:
+The free Zen model has a usage limit. If Harbor reports
+`provider.free-limit` / HTTP 429 in the agent log, the quota is exhausted — not
+an error in the task or container setup. Wait for the reset, configure another
+model, or use an OpenCode Go subscription:
 
-Für den sofortigen Lauf mit dem kostenpflichtigen Go-Modell:
+For an immediate run with the paid Go model:
 
 ```bash
-# einmalig auf dem Host, falls noch kein Go-Login besteht
+# once on the host, if no Go login exists yet
 opencode auth login opencode-go
 
 ./run.sh -c configs/caesar-opencode-go.yaml
 ```
 
-Nur diese ausdrückliche Go-Konfiguration aktiviert die Weitergabe des Go-Keys.
-`run.sh` ruft dafür `opencode auth export` auf dem Host auf und wählt im
-Controller den **aktiven** `opencode-go`-Eintrag aus. Die temporäre Exportdatei
-liegt mit Modus 0600 im Runtime-Verzeichnis, wird read-only gemountet und nach
-dem Lauf gelöscht. Alternativ kann `OPENCODE_API_KEY` direkt gesetzt werden; dann
-ist kein Export nötig. Durch das Opt-in verbraucht der Standardjob nicht
-unbeabsichtigt Go-Kontingent.
+Only this explicit Go configuration enables forwarding of the Go key.
+`run.sh` calls `opencode auth export` on the host and selects the **active**
+`opencode-go` entry in the controller. The temporary export file is created
+with mode 0600 in the runtime directory, mounted read-only, and deleted after
+the run. Alternatively, `OPENCODE_API_KEY` can be set directly; then no export
+is needed. Because of the opt-in, the default job does not unintentionally
+consume Go quota.
 
-Für NVIDIA Nemotron 3.5 Super VL über OpenRouter wird der Key einmalig
-geschützt außerhalb des Projekts gespeichert:
+For NVIDIA Nemotron 3.5 Super VL via OpenRouter, the key is stored once,
+protected outside the project:
 
 ```bash
 install -d -m 700 ~/.config/harbour
@@ -175,30 +172,29 @@ install -d -m 700 ~/.config/harbour
 ./run.sh -c configs/caesar-openrouter.yaml
 ```
 
-Die Jobdatei verwendet `openrouter/nvidia/nemotron-3.5-super-vl:free`.
-`run.sh` mountet `~/.config/harbour/openrouter.key` nur für diese Konfiguration
-read-only in den Controller. Alternativ funktioniert
-`export OPENROUTER_API_KEY=...`; die Umgebungsvariable hat Vorrang. Der Pfad
-lässt sich über `OPENROUTER_HOST_SECRET_FILE` ändern.
+The job file uses `openrouter/nvidia/nemotron-3.5-super-vl:free`.
+`run.sh` mounts `~/.config/harbour/openrouter.key` read-only into the controller
+only for this configuration. Alternatively, `export OPENROUTER_API_KEY=...`
+works; the environment variable takes precedence. The path can be changed via
+`OPENROUTER_HOST_SECRET_FILE`.
 
-OpenRouter begrenzt kostenlose Modelle derzeit kontoseitig auf **50 Requests
-pro Tag**. Ein Modellwechsel umgeht dieses Limit nicht. Für einen späteren Lauf
-gibt es zusätzlich:
+OpenRouter currently limits free models to **50 requests per day** per account.
+Switching models does not bypass this limit. For a later run there are also:
 
 ```bash
 ./run.sh -c configs/mysterytwister-all-openrouter-lightning.yaml
-# oder sofort mit dem vorhandenen OpenCode-Go-Zugang:
+# or immediately with the existing OpenCode Go subscription:
 ./run.sh -c configs/mysterytwister-all-opencode-go.yaml
 ```
 
-`OPENCODE_API_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY` und
-`ANTHROPIC_API_KEY` werden nur dann an den Controller durchgereicht, wenn sie
-auf dem Host gesetzt sind beziehungsweise die jeweilige Key-Datei existiert.
+`OPENCODE_API_KEY`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY` and
+`ANTHROPIC_API_KEY` are only passed to the controller if they are set on the
+host or the respective key file exists.
 
-## Ohne Wrapper
+## Without the wrapper
 
-Der Wrapper übernimmt nur Pfade, Socket und den optionalen Host-Workaround.
-Äquivalent geht es direkt:
+The wrapper only handles paths, the socket, and the optional host workaround.
+The equivalent direct invocation is:
 
 ```bash
 export HOST_PROJECT_DIR="$PWD"
@@ -209,65 +205,65 @@ podman compose -f compose.yaml run --rm -T harbor \
   run -c configs/caesar-opencode2.yaml
 ```
 
-## Enthaltene Challenges
+## Included challenges
 
-- **Caesar Encryption**: modifiziertes 62-Zeichen-Alphabet `a-z`, `A-Z`, `0-9`
-  mit Shift 4. Der Verifier vergleicht den Klartext case-sensitiv.
-- **Autokey Cipher**: kurzes Keyword plus Klartext als Schlüsselstrom; bekannte
-  Vokabel `WORLD`. Der Verifier ignoriert Groß-/Kleinschreibung und Leerzeichen.
-- **M-138 – Part 1**: 25 bekannte Strips, nur der gemeinsame Offset ist
-  unbekannt. Der Verifier ignoriert Groß-/Kleinschreibung und Leerzeichen.
-- **Merkle-Hellman Knapsack – Part 1**: superincreasing Subset-Sum mit
-  ASCII-kodiertem Klartext. Der Verifier verlangt die exakte Schreibweise.
-- **The Impatient Notary** (Level 2): drei RSA-Schlüssel mit kleinem privaten
-  Exponenten, Angriff über Wieners Continued Fractions. Der Verifier prüft den
-  geforderten SHA-256-Digest.
+- **Caesar Encryption**: modified 62-character alphabet `a-z`, `A-Z`, `0-9`
+  with shift 4. The verifier compares the plaintext case-sensitively.
+- **Autokey Cipher**: short keyword plus plaintext as the key stream; known
+  word `WORLD`. The verifier ignores case and whitespace.
+- **M-138 – Part 1**: 25 known strips, only the common offset is unknown. The
+  verifier ignores case and whitespace.
+- **Merkle-Hellman Knapsack – Part 1**: superincreasing subset-sum with
+  ASCII-encoded plaintext. The verifier requires the exact spelling.
+- **The Impatient Notary** (Level 2): three RSA keys with small private
+  exponents, attack via Wiener's continued fractions. The verifier checks the
+  required SHA-256 digest.
 
-Jeder Task schreibt `0` oder `1` nach `/logs/verifier/reward.txt`. Die Lösung
-steckt nicht im Agenten-Image: `tests/` wird erst für die Verifikation
-eingehängt, `solution/` nur für den Oracle-Agenten.
+Each task writes `0` or `1` to `/logs/verifier/reward.txt`. The solution is not
+in the agent image: `tests/` is mounted only for verification, `solution/` only
+for the oracle agent.
 
-Alle fünf Tasks zusammen:
+All five tasks together:
 
 ```bash
 ./run.sh -c configs/mysterytwister-all-openrouter.yaml
 ```
 
-## Tool-Usage und Dauer
+## Tool usage and duration
 
-Nach jedem Agentenlauf erzeugt `run.sh` automatisch:
+After each agent run, `run.sh` automatically creates:
 
 ```text
 jobs/<job>/tool_usage.json
 ```
 
-Darin stehen pro Trial:
+It contains per trial:
 
-- Anzahl der Tool-Aufrufe und Aufrufe je Tool
-- Gesamt-, Durchschnitts- und Maximaldauer je Tool
-- gesamte Wall-Clock-Zeit und Nicht-Tool-Zeit
-- Input-, Output-, Reasoning- und Cache-Tokens
-- Modellkosten, soweit der Provider sie meldet
+- number of tool calls and calls per tool
+- total, average, and maximum duration per tool
+- total wall-clock time and non-tool time
+- input, output, reasoning, and cache tokens
+- model cost, if the provider reports it
 
-Manuell für einen bestehenden Job:
+Manually for an existing job:
 
 ```bash
 python3 local/analyze_job.py jobs/<job>
 ```
 
-## Neue Challenge hinzufügen
+## Adding a new challenge
 
-1. Offizielle Challenge-Dateien von MysteryTwister herunterladen.
-2. Task-Ordner nach dem bestehenden Schema anlegen:
+1. Download the official challenge files from MysteryTwister.
+2. Create a task folder following the existing schema:
    `environment/`, `tests/`, `solution/`, `instruction.md`, `task.toml`.
-3. `environment/opencode2-wrapper.sh` aus einem bestehenden Task kopieren und
-   die offiziellen Dateien im `environment/Dockerfile` nach `/app` kopieren.
-4. Nur die Aufgabenstellung in `instruction.md` schreiben; keine Lösung.
-5. In `tests/check_answer.py` das erwartete Antwortformat prüfen und in
-   `tests/test.sh` bei Erfolg `1` nach `/logs/verifier/reward.txt` schreiben.
-6. In `solution/solve.sh` die Antwort tatsächlich aus den Challenge-Daten
-   berechnen. `APP_DIR` erlaubt lokale Tests außerhalb des Containers.
-7. Prüfen:
+3. Copy `environment/opencode2-wrapper.sh` from an existing task and copy the
+   official files to `/app` in `environment/Dockerfile`.
+4. Write only the task statement in `instruction.md`; no solution.
+5. In `tests/check_answer.py`, check the expected answer format and, in
+   `tests/test.sh`, write `1` to `/logs/verifier/reward.txt` on success.
+6. In `solution/solve.sh`, actually compute the answer from the challenge data.
+   `APP_DIR` allows local tests outside the container.
+7. Validate:
 
 ```bash
 APP_DIR=/tmp/test-task bash mysterytwister-<name>/solution/solve.sh
@@ -278,56 +274,55 @@ APP_DIR=/tmp/test-task bash mysterytwister-<name>/solution/solve.sh
   -m openrouter/nvidia/nemotron-3.5-super-vl:free
 ```
 
-8. Den Task-Pfad in die gewünschte Datei unter `configs/` aufnehmen.
+8. Add the task path to the desired file under `configs/`.
 
-## Validierung
+## Validation
 
-- Gemeinsamer Oracle-Lauf über alle fünf Tasks in
-  `jobs/2026-10-30__10-45-54`: **5 Trials, 0 Exceptions, Mean/Reward 1.0**.
-- Der Level-2-Task *The Impatient Notary* löst alle drei RSA-Schlüssel per
-  Wiener-Angriff (private Exponenten mit 520, 516 und 518 Bit) und erzeugt den
-  erwarteten SHA-256-Digest.
-- Containerisierter Dry-Run mit Task, Custom Agent und Podman: erfolgreich.
-- Oracle-Lauf Caesar `jobs/2026-10-30__09-44-31`: **1 Trial, 0 Exceptions,
-  Reward 1.0**.
-- Vollständiger OpenCode-2.2.2-Lauf mit `opencode-go/deepseek-v4.1-flash` in
-  `jobs/2026-10-30__10-19-08`: **1 Trial, 0 Exceptions, Reward 1.0** in 64
-  Sekunden. Der Agent schrieb den korrekten Klartext; EPIPE trat nicht auf.
-  Gemessene Modellkosten: etwa 0,00314 USD.
-- OpenRouter-Lauf mit `openrouter/nvidia/nemotron-3.5-super-vl:free` in
-  `jobs/2026-10-30__10-28-14`: ebenfalls **1 Trial, 0 Exceptions, Reward 1.0**,
-  diesmal in 74 Sekunden. Auch hier: kein EPIPE und kein API-Key in den
-  Job-Dateien.
-- Wiederholung des OpenRouter-Laufs allein über die geschützte Key-Datei in
-  `jobs/2026-10-30__10-33-13`: **Reward 1.0, 0 Exceptions**; der Key kommt in
-  keiner Job-Datei vor, die Datei hat Modus 0600.
-- Sicherheitsprüfung des Go-Laufs: Der aktive API-Key kommt in keiner Datei des
-  Job-Verzeichnisses vor, und der temporäre Credential-Export wurde gelöscht.
-- Der frühere freie OpenCode-Lauf `jobs/2026-10-30__09-42-53` endete mit Reward
-  0, weil das kostenlose Modellkontingent erschöpft war (`provider.free-limit`,
-  HTTP 429). Das ist kein Fehler des Tasks oder der Container-Einrichtung.
+- Combined oracle run across all five tasks in
+  `jobs/2026-10-30__10-45-54`: **5 trials, 0 exceptions, mean/reward 1.0**.
+- The Level 2 task *The Impatient Notary* solves all three RSA keys via
+  Wiener's attack (private exponents with 520, 516, and 518 bits) and produces
+  the expected SHA-256 digest.
+- Containerized dry run with task, custom agent, and Podman: successful.
+- Oracle run Caesar `jobs/2026-10-30__09-44-31`: **1 trial, 0 exceptions,
+  reward 1.0**.
+- Full OpenCode 2.2.2 run with `opencode-go/deepseek-v4.1-flash` in
+  `jobs/2026-10-30__10-19-08`: **1 trial, 0 exceptions, reward 1.0** in 64
+  seconds. The agent wrote the correct plaintext; EPIPE did not occur. Measured
+  model cost: about 0.00314 USD.
+- OpenRouter run with `openrouter/nvidia/nemotron-3.5-super-vl:free` in
+  `jobs/2026-10-30__10-28-14`: also **1 trial, 0 exceptions, reward 1.0**,
+  this time in 74 seconds. Again: no EPIPE and no API key in the job files.
+- Repeat of the OpenRouter run using only the protected key file in
+  `jobs/2026-10-30__10-33-13`: **reward 1.0, 0 exceptions**; the key does not
+  appear in any job file, and the file has mode 0600.
+- Security check of the Go run: the active API key does not appear in any file
+  in the job directory, and the temporary credential export was deleted.
+- The earlier free OpenCode run `jobs/2026-10-30__09-42-53` ended with reward 0
+  because the free model quota was exhausted (`provider.free-limit`, HTTP 429).
+  This is not an error in the task or container setup.
 
-## Besonderheiten dieses Hosts
+## Host-specific notes
 
-`wlp4s0` hat hier das ungewöhnliche Präfix `/0`. Dadurch kann netavark kein
-freies Bridge-Subnetz finden. `run.sh` erkennt das automatisch und verwendet:
+`wlp4s0` has the unusual prefix `/0` on this host. As a result, netavark cannot
+find a free bridge subnet. `run.sh` detects this automatically and uses:
 
-- `compose.host-network.yaml` für den Controller,
-- `local/host-network.override.yaml` für den Task-Container.
+- `compose.host-network.yaml` for the controller,
+- `local/host-network.override.yaml` for the task container.
 
-Auf einem Host mit normalem Präfix werden diese Dateien nicht aktiviert; die
-portable Basiskonfiguration bleibt unverändert.
+On a host with a normal prefix, these files are not activated; the portable
+base configuration remains unchanged.
 
-Der Verifier läuft bewusst im selben Container wie der Agent. `harbor lint`
-meldet deshalb nur `shared-verifier`. Ein separater Verifier wäre für strengere
-Isolation möglich, ist mit dem Host-Network-Workaround aber derzeit nicht
-zuverlässig testbar.
+The verifier intentionally runs in the same container as the agent. `harbor
+lint` therefore reports only `shared-verifier`. A separate verifier would be
+possible for stricter isolation, but is currently not reliably testable with
+the host-network workaround.
 
-## Offizieller Referenzpunkt
+## Official reference
 
-Die Einrichtung folgt der Dokumentation für **Harbor v0.25.0**, insbesondere:
+The setup follows the documentation for **Harbor v0.25.0**, in particular:
 
 - [Installation](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/getting-started/installation.mdx)
-- [Jobs und Configs](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/jobs/configs.mdx)
-- [Custom Agents](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/agents/custom-agents.mdx)
-- [Task-Environments](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/tasks/environment.mdx)
+- [Jobs and configs](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/jobs/configs.mdx)
+- [Custom agents](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/agents/custom-agents.mdx)
+- [Task environments](https://github.com/harbor-framework/harbor/blob/v0.25.0/docs-mintlify/tasks/environment.mdx)

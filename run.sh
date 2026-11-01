@@ -11,8 +11,8 @@ export PODMAN_COMPOSE_WARNING_LOGS=false
 export OPENCODE_HOST_CONFIG_DIR="${OPENCODE_HOST_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}"
 
 if [[ ! -S "$PODMAN_SOCKET" ]]; then
-  echo "Podman-Socket fehlt: $PODMAN_SOCKET" >&2
-  echo "Starte ihn mit: systemctl --user enable --now podman.socket" >&2
+  echo "Podman socket missing: $PODMAN_SOCKET" >&2
+  echo "Start it with: systemctl --user enable --now podman.socket" >&2
   exit 1
 fi
 
@@ -33,8 +33,8 @@ if [[ -z "${OPENROUTER_API_KEY:-}" && " ${args[*]} " == *"openrouter"* ]]; then
   if [[ -f "$OPENROUTER_HOST_SECRET_FILE" ]]; then
     compose+=(-f compose.openrouter.yaml)
   else
-    echo "OPENROUTER_API_KEY ist nicht gesetzt und die lokale Key-Datei fehlt." >&2
-    echo "Einmalig speichern:" >&2
+    echo "OPENROUTER_API_KEY is not set and the local key file is missing." >&2
+    echo "Create it once with:" >&2
     echo "  install -d -m 700 \"${OPENROUTER_HOST_SECRET_FILE%/*}\"" >&2
     echo "  umask 077; printf '%s' '<key>' > \"$OPENROUTER_HOST_SECRET_FILE\"" >&2
     exit 1
@@ -45,7 +45,7 @@ fi
 # the active credential with the host CLI and remove the temporary file on exit.
 if [[ -z "${OPENCODE_API_KEY:-}" && " ${args[*]} " == *"opencode-go"* ]]; then
   if ! command -v opencode >/dev/null 2>&1; then
-    echo "OpenCode-CLI fehlt. Setze OPENCODE_API_KEY oder installiere OpenCode auf dem Host." >&2
+    echo "OpenCode CLI not found. Set OPENCODE_API_KEY or install OpenCode on the host." >&2
     exit 1
   fi
   export OPENCODE_AUTH_EXPORT="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/harbor-opencode-auth-$(id -u).json"
